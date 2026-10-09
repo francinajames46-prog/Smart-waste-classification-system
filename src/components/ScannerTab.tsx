@@ -21,7 +21,7 @@ import {
   Flame,
   Info
 } from 'lucide-react';
-import { SAMPLE_WASTE_ITEMS, SampleItem } from '../data/sampleItems';
+import { SAMPLE_WASTE_ITEMS, SAMPLE_CATEGORY_TABS, SampleItem } from '../data/sampleItems';
 import { WasteClassificationResult, WasteCategory, BinCode } from '../types/waste';
 import { useEco } from '../context/EcoContext';
 
@@ -30,6 +30,7 @@ export const ScannerTab: React.FC = () => {
 
   // Mode: 'upload' | 'camera' | 'samples'
   const [inputMode, setInputMode] = useState<'upload' | 'camera' | 'samples'>('samples');
+  const [selectedCategoryTab, setSelectedCategoryTab] = useState<string>('All Presets');
   const [selectedImage, setSelectedImage] = useState<string | null>(SAMPLE_WASTE_ITEMS[0].image);
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const [result, setResult] = useState<WasteClassificationResult | null>(SAMPLE_WASTE_ITEMS[0].classification);
@@ -232,6 +233,29 @@ export const ScannerTab: React.FC = () => {
     }
   };
 
+  const getCategoryBadgeClass = (categoryTitle: string) => {
+    switch (categoryTitle) {
+      case 'Plastic Waste':
+        return 'bg-amber-500/20 text-amber-300 border-amber-500/40';
+      case 'Veg & Organic Waste':
+        return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
+      case 'Glass Waste':
+        return 'bg-blue-500/20 text-blue-300 border-blue-500/40';
+      case 'Paper & Cardboard':
+        return 'bg-sky-500/20 text-sky-300 border-sky-500/40';
+      case 'Metal Waste':
+        return 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40';
+      case 'Hazardous & E-Waste':
+        return 'bg-rose-500/20 text-rose-300 border-rose-500/40';
+      default:
+        return 'bg-slate-700/30 text-slate-300 border-slate-600/40';
+    }
+  };
+
+  const filteredSamples = selectedCategoryTab === 'All Presets'
+    ? SAMPLE_WASTE_ITEMS
+    : SAMPLE_WASTE_ITEMS.filter(s => s.categoryTitle === selectedCategoryTab);
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Hero Banner with Hackathon Context */}
@@ -410,20 +434,50 @@ export const ScannerTab: React.FC = () => {
             </div>
           )}
 
-          {/* Preset Demo Items for Instant Hackathon Testing */}
-          <div className="bg-slate-900/70 rounded-2xl border border-slate-800 p-4 space-y-3">
+          {/* Preset Demo Items Organized by Waste Category Titles */}
+          <div className="bg-slate-900/70 rounded-2xl border border-slate-800 p-4 space-y-3.5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
                 <span>Instant Hackathon Demo Presets</span>
               </span>
-              <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 font-semibold">
-                Click any to test
+              <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20 font-semibold">
+                {filteredSamples.length} {filteredSamples.length === 1 ? 'item' : 'items'}
               </span>
             </div>
 
-            <div className="grid grid-cols-3 gap-2.5">
-              {SAMPLE_WASTE_ITEMS.map((sample) => {
+            {/* Waste Category Title Selector Tabs */}
+            <div className="flex items-center space-x-1.5 overflow-x-auto pb-1.5 scrollbar-thin">
+              {SAMPLE_CATEGORY_TABS.map((tabTitle) => {
+                const isActive = selectedCategoryTab === tabTitle;
+                const count = tabTitle === 'All Presets' 
+                  ? SAMPLE_WASTE_ITEMS.length 
+                  : SAMPLE_WASTE_ITEMS.filter(s => s.categoryTitle === tabTitle).length;
+
+                return (
+                  <button
+                    key={tabTitle}
+                    onClick={() => setSelectedCategoryTab(tabTitle)}
+                    className={`px-2.5 py-1 rounded-xl text-[10px] font-bold whitespace-nowrap transition flex items-center space-x-1 ${
+                      isActive
+                        ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-950'
+                        : 'bg-slate-950/80 text-slate-400 hover:text-slate-200 border border-slate-800 hover:border-slate-700'
+                    }`}
+                  >
+                    <span>{tabTitle}</span>
+                    <span className={`text-[9px] px-1.5 py-0.2 rounded-full ${
+                      isActive ? 'bg-black/30 text-white font-extrabold' : 'bg-slate-800 text-slate-400'
+                    }`}>
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Items Grid for Selected Category Title */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-[380px] overflow-y-auto pr-1">
+              {filteredSamples.map((sample) => {
                 const isCurrent = selectedImage === sample.image;
                 return (
                   <button
@@ -431,8 +485,8 @@ export const ScannerTab: React.FC = () => {
                     onClick={() => handleSampleSelect(sample)}
                     className={`relative rounded-xl overflow-hidden border p-1.5 text-left transition group ${
                       isCurrent
-                        ? 'border-emerald-400 bg-emerald-950/40 shadow-md ring-1 ring-emerald-400/50'
-                        : 'border-slate-800 bg-slate-950/60 hover:border-slate-700 hover:bg-slate-900'
+                        ? 'border-emerald-400 bg-emerald-950/40 shadow-lg ring-1 ring-emerald-400/50'
+                        : 'border-slate-800 bg-slate-950/70 hover:border-slate-700 hover:bg-slate-900'
                     }`}
                   >
                     <div className="w-full aspect-[4/3] rounded-lg overflow-hidden bg-slate-900 mb-1.5 relative">
@@ -441,11 +495,16 @@ export const ScannerTab: React.FC = () => {
                         alt={sample.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                       />
+                      {/* Category Badge Overlay on Thumbnail */}
+                      <span className={`absolute top-1 left-1 px-1.5 py-0.5 rounded text-[8px] font-bold tracking-tight border backdrop-blur-md ${getCategoryBadgeClass(sample.categoryTitle)}`}>
+                        {sample.categoryTitle.replace(' Waste', '')}
+                      </span>
                     </div>
-                    <span className="block text-[11px] font-bold text-slate-200 truncate leading-tight">
+
+                    <span className="block text-[11px] font-bold text-slate-100 truncate leading-tight group-hover:text-emerald-300 transition">
                       {sample.name}
                     </span>
-                    <span className="block text-[9px] text-emerald-400/90 font-medium">
+                    <span className="block text-[9px] text-slate-400 font-medium truncate mt-0.5">
                       {sample.category}
                     </span>
                   </button>
